@@ -1,4 +1,10 @@
 <?php
+	/*
+		InstaStories Program
+		Copyright Ivan_Alone, 2018
+		GNU General Public License 3
+	*/
+	
     $save_path = replaceCycle($argv[1] != null && file_exists($argv[1]) ? $argv[1] . '/' : './', '/', 2);
 
     echo 'Loading...' . PHP_EOL;
@@ -20,6 +26,7 @@
     include ('ConsoleGraph.class.php');
     
     $loading_sprite = file_get_contents($save_path.'bin/instaload.png.conpic');
+    $developer_sprite = file_get_contents($save_path.'bin/myLogo.png.conpic');
     
     echo 'Loading done!' . PHP_EOL;
     
@@ -28,12 +35,19 @@
     $console = new ConsoleGraph();
     
     $console->graphTitle('InstaStories Saver');
+	
     $console->graphClear();
     $console->graphColor(0xF, 0x5);
-    
     echo $loading_sprite;
     sleep(2);
+	
+    $console->graphClear();
+    $console->graphColor(0x0, 0xC);
+    echo $developer_sprite;
+    sleep(1);
     
+	
+	
     $console->graphClear();
     $console->graphColor(0xF, 0x0);
     
