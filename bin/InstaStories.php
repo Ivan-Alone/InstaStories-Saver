@@ -1,10 +1,10 @@
 <?php
-	/*
-		InstaStories Program
-		Copyright Ivan_Alone, 2018
-		GNU General Public License 3
-	*/
-	
+    /*
+        InstaStories Program
+        Copyright Ivan_Alone, 2018
+        GNU General Public License 3
+    */
+    
     $save_path = replaceCycle($argv[1] != null && file_exists($argv[1]) ? $argv[1] . '/' : './', '/', 2);
 
     echo 'Loading...' . PHP_EOL;
@@ -35,19 +35,19 @@
     $console = new ConsoleGraph();
     
     $console->graphTitle('InstaStories Saver');
-	
+    
     $console->graphClear();
     $console->graphColor(0xF, 0x5);
     echo $loading_sprite;
     sleep(2);
-	
+    
     $console->graphClear();
     $console->graphColor(0x0, 0xC);
     echo $developer_sprite;
     sleep(1);
     
-	
-	
+    
+    
     $console->graphClear();
     $console->graphColor(0xF, 0x0);
     
@@ -111,33 +111,38 @@
         $console->graphDottedLine();
         $console->graphEmptyLine();
         
-        foreach($stories as $__user) {
-            $user       = $__user['node'];
-            $id         = $user['id'];
-            $user_info  = $user['user'];
-            
-            $console->graphWriteToLine('Reading & downloading Stories by '.$user_info['username'].'...');
+        if (!is_array($stories)) {
+            $console->graphWriteToLine('Nothing to download, no stories in your feed!');
             $console->graphEmptyLine();
-            
-            $user_stories = json_decode(urlGetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}'), 1);
-            @mkdir(__instagram);
-            foreach($user_stories['data']['reels_media'] as $reels_media) {
-                $directory = __instagram.'/'.$reels_media['user']['username'];
-                @mkdir($directory);
-                foreach ($reels_media['items'] as $story) {
-                    $time_public = $story['taken_at_timestamp'];
-                    switch ($story['__typename']) {
-                        case 'GraphStoryImage':
-                        case 'GraphStoryVideo':
-                            $images = $story[$story['__typename'] == 'GraphStoryVideo' ? 'video_resources' : 'display_resources'];
-                            $images_count = count($images);
-                            $image_maxres = $images[$images_count-1];
-                            
-                            $filename = $directory.'/'.$reels_media['user']['username'].' at '.date('Y.m.d - H.i.s',$time_public).($story['__typename'] == 'GraphStoryVideo' ? '.mp4' : '.jpg');
-                            
-                            if (!file_exists($filename))
-                                file_put_contents($filename, urlGetQuery($image_maxres['src'], 0));;
-                        break;
+        } else {
+            foreach($stories as $__user) {
+                $user       = $__user['node'];
+                $id         = $user['id'];
+                $user_info  = $user['user'];
+                
+                $console->graphWriteToLine('Reading & downloading Stories by '.$user_info['username'].'...');
+                $console->graphEmptyLine();
+                
+                $user_stories = json_decode(urlGetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}'), 1);
+                @mkdir(__instagram);
+                foreach($user_stories['data']['reels_media'] as $reels_media) {
+                    $directory = __instagram.'/'.$reels_media['user']['username'];
+                    @mkdir($directory);
+                    foreach ($reels_media['items'] as $story) {
+                        $time_public = $story['taken_at_timestamp'];
+                        switch ($story['__typename']) {
+                            case 'GraphStoryImage':
+                            case 'GraphStoryVideo':
+                                $images = $story[$story['__typename'] == 'GraphStoryVideo' ? 'video_resources' : 'display_resources'];
+                                $images_count = count($images);
+                                $image_maxres = $images[$images_count-1];
+                                
+                                $filename = $directory.'/'.$reels_media['user']['username'].' at '.date('Y.m.d - H.i.s',$time_public).($story['__typename'] == 'GraphStoryVideo' ? '.mp4' : '.jpg');
+                                
+                                if (!file_exists($filename))
+                                    file_put_contents($filename, urlGetQuery($image_maxres['src'], 0));;
+                            break;
+                        }
                     }
                 }
             }
