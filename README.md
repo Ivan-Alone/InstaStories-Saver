@@ -2,7 +2,7 @@
 
 Программа для сохранения историй Instagram. Всё предельно просто, скачиваем архив с программой, скачиваем библиотеку интерфейса (**ConsoleGraph.class.php** из проекта [PHP-ConsoleGraph](https://github.com/Ivan-Alone/PHP-ConsoleGraph)) и копируем её в папку **bin** скачанного архива. Устанавливаем PHP:
 
-* Windows: скачиваем отсюда архив: [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe**, переименовываем **php.ini-production** в **php.ini**
+* Windows: скачиваем отсюда архив: [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe** (либо распаковываем все файлы в папку **bin** скачанного архива), переименовываем **php.ini-production** в **php.ini**
 * Linux Debian/\*buntu: 
 ```sudo apt install php php-curl php-gd```
 
