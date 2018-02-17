@@ -1,9 +1,11 @@
 # InstaStories Saver
 
-Программа для сохранения историй Instagram. Всё предельно просто, скачиваем архив с программой, скачиваем библиотеку интерфейса (**ConsoleGraph.class.php** из проекта [PHP-ConsoleGraph](https://github.com/Ivan-Alone/PHP-ConsoleGraph)) и копируем её в папку **bin** скачанного архива. Устанавливаем PHP:
+Программа для сохранения историй Instagram. 
 
-* Windows: скачиваем отсюда архив: [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe** (либо распаковываем все файлы в папку **bin** скачанного архива), переименовываем **php.ini-production** в **php.ini**
-* Linux Debian/\*buntu: 
+Всё предельно просто, скачиваем архив с программой, распаковываем. Устанавливаем PHP:
+
+* Windows: скачиваем отсюда архив: [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe** (либо распаковываем все файлы в папку **bin** скачанного архива), скачиваем [https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini](php.ini) и кладём в папку с **php.exe**
+* Linux Debian/Ubuntu: 
 ```sudo apt install php php-curl php-gd```
 
 На \*NIX'ах настраиваем разрешение на выполнение файла **InstaStories.sh**, например так: 
