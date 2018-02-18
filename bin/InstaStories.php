@@ -4,7 +4,7 @@
         Copyright Ivan_Alone, 2018
         GNU General Public License 3
     */
-	
+        
     echo 'Loading...' . PHP_EOL;
     if ($argv[1] == null) $argv[1] = $_GET['addr'];
     $save_path = replaceCycle($argv[1] != null && file_exists($argv[1]) ? $argv[1] . '/' : './', '/', 2);
@@ -21,27 +21,27 @@
     $cookies = @extractCookies(@file_get_contents(__cookie_path));
     if (@$cookies['www.instagram.com']['csrftoken'] == null) {
         urlQuery('https://www.instagram.com');
-		$cookies = @extractCookies(@file_get_contents(__cookie_path));
+        $cookies = @extractCookies(@file_get_contents(__cookie_path));
     }
-	
+    
     define('__csrftoken', $cookies['www.instagram.com']['csrftoken']['value']);
     
     $loading_sprite = @file_get_contents($save_path.'bin/instaload.png.conpic2');
     $developer_sprite = @file_get_contents($save_path.'bin/myLogo.png.conpic2');
     
     echo 'Loading done!' . PHP_EOL;
-	
+    
     
   //$console = new ConsoleGraph('__do_not_configure_window');
     $console = new ConsoleGraph();
     
     $console->graphTitle('InstaStories Saver');
-	
+    
     $console->graphColor(0xF, 0x0, true);
     
-	if (!in_array('--no-bootsprites', $argv)) {
-		$console->graphDrawPic(0xF, 0xD, $loading_sprite, 2);
-		$console->graphDrawPic(0x0, 0xC, $developer_sprite, 1);
+    if (!in_array('--no-bootsprites', $argv)) {
+        $console->graphDrawPic(0xF, 0xD, $loading_sprite, 2);
+        $console->graphDrawPic(0x0, 0xC, $developer_sprite, 1);
     }
     
     $console->graphStartingLine();
@@ -49,7 +49,7 @@
     $console->graphWriteToCenterLine('Instagram Stories Saver [Ivan_Alone]');
     $console->graphEmptyLine();
     $console->graphDottedLine();
-	
+    
     $user = null;    
     
     if (@$cookies['www.instagram.com']['ds_user_id'] != null) {
@@ -57,78 +57,78 @@
         $user = $cookies['www.instagram.com']['ds_user_id']['value'];
         
     } else {
-		while (true) {
-			$console->graphEmptyLine();
-			$console->graphWriteToLine('Enter your login & password from Instagram: ');
-			$console->graphEmptyLine();
-			$console->graphWriteToLine('Login: ');
-			$login = $console->graphReadLn();
-			$console->graphEmptyLine();
-			$console->graphWriteToLine('Password: ');
-			$pass = $console->graphReadPassword();
-			$console->graphEmptyLine();
-			
-			if ($login != null && $pass != null) {
-				$auth_json = urlQuery('https://www.instagram.com/accounts/login/ajax/', array(
-					'username' => $login,
-					'password' => $pass
-				));
-				
-				$cookies = @extractCookies(@file_get_contents(__cookie_path));
-				
-				if (@$auth_json['authenticated']) {
-					$user = $cookies['www.instagram.com']['ds_user_id']['value'];
-					$console->graphWriteToLine('Logged in in '.date('H:i d.m.Y'));
-					
-					$console->graphEmptyLine();
-					$console->graphDottedLine();
-					
-					break;
-				} elseif (@$auth_json['message'] == 'checkpoint_required') {
-					$checkpoint_url = $auth_json['checkpoint_url'];
-					$checkout_data_dcd = urlQuery('https://www.instagram.com'.$checkpoint_url, array(
-						'choice' => 1
-					));
-					
-					$console->graphWriteToLine('Attention: security code was sent to '.$checkout_data_dcd['fields']['contact_point']);
-					$sequrity_data = array();
-					$EC_TEST = 0;
-					
-					while (@$sequrity_data['status'] != 'ok') {
-						if ($EC_TEST != 0) {
-							$console->graphWriteToLine('Error: wrong security code, repeat it!');
-							$console->graphEmptyLine();
-						}
-						$console->graphWriteToLine('Enter your code: ');
-						
-						$sequrity_data = urlQuery('https://www.instagram.com'.$checkpoint_url, array(
-							'security_code' => $console->graphReadLn()
-						));
-						
-						$EC_TEST++;
-						$console->graphEmptyLine();
-					}
-					
-					$cookies = @extractCookies(@file_get_contents(__cookie_path));
-					$user = $cookies['www.instagram.com']['ds_user_id']['value'];
-					$console->graphWriteToLine('Logged in in '.date('H:i d.m.Y'));
-					
-					$console->graphEmptyLine();
-					$console->graphDottedLine();
-					
-					break;
-				} else {
-					$console->graphWriteToLine('Login or password is incorrect, repeat input please!');
-				}
-			} else {
-				$console->graphWriteToLine('Login or password is empty, repeat input please!');
-			}
-			$console->graphEmptyLine();
-			$console->graphDottedLine();
-		}
+        while (true) {
+            $console->graphEmptyLine();
+            $console->graphWriteToLine('Enter your login & password from Instagram: ');
+            $console->graphEmptyLine();
+            $console->graphWriteToLine('Login: ');
+            $login = $console->graphReadLn();
+            $console->graphEmptyLine();
+            $console->graphWriteToLine('Password: ');
+            $pass = $console->graphReadPassword();
+            $console->graphEmptyLine();
+            
+            if ($login != null && $pass != null) {
+                $auth_json = urlQuery('https://www.instagram.com/accounts/login/ajax/', array(
+                    'username' => $login,
+                    'password' => $pass
+                ));
+                
+                $cookies = @extractCookies(@file_get_contents(__cookie_path));
+                
+                if (@$auth_json['authenticated']) {
+                    $user = $cookies['www.instagram.com']['ds_user_id']['value'];
+                    $console->graphWriteToLine('Logged in in '.date('H:i d.m.Y'));
+                    
+                    $console->graphEmptyLine();
+                    $console->graphDottedLine();
+                    
+                    break;
+                } elseif (@$auth_json['message'] == 'checkpoint_required') {
+                    $checkpoint_url = $auth_json['checkpoint_url'];
+                    $checkout_data_dcd = urlQuery('https://www.instagram.com'.$checkpoint_url, array(
+                        'choice' => 1
+                    ));
+                    
+                    $console->graphWriteToLine('Attention: security code was sent to '.$checkout_data_dcd['fields']['contact_point']);
+                    $sequrity_data = array();
+                    $EC_TEST = 0;
+                    
+                    while (@$sequrity_data['status'] != 'ok') {
+                        if ($EC_TEST != 0) {
+                            $console->graphWriteToLine('Error: wrong security code, repeat it!');
+                            $console->graphEmptyLine();
+                        }
+                        $console->graphWriteToLine('Enter your code: ');
+                        
+                        $sequrity_data = urlQuery('https://www.instagram.com'.$checkpoint_url, array(
+                            'security_code' => $console->graphReadLn()
+                        ));
+                        
+                        $EC_TEST++;
+                        $console->graphEmptyLine();
+                    }
+                    
+                    $cookies = @extractCookies(@file_get_contents(__cookie_path));
+                    $user = $cookies['www.instagram.com']['ds_user_id']['value'];
+                    $console->graphWriteToLine('Logged in in '.date('H:i d.m.Y'));
+                    
+                    $console->graphEmptyLine();
+                    $console->graphDottedLine();
+                    
+                    break;
+                } else {
+                    $console->graphWriteToLine('Login or password is incorrect, repeat input please!');
+                }
+            } else {
+                $console->graphWriteToLine('Login or password is empty, repeat input please!');
+            }
+            $console->graphEmptyLine();
+            $console->graphDottedLine();
+        }
     }
     
-	$console->graphEmptyLine();
+    $console->graphEmptyLine();
     
     if ($user != null) {
         $feed = urlGetQuery('https://www.instagram.com/?__a=1');
@@ -155,13 +155,13 @@
                 
                 $user_stories = urlGetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}');
                 @mkdir(__instagram);
-				
+                
                 foreach($user_stories['data']['reels_media'] as $reels_media) {
                     $directory = __instagram.'/'.$reels_media['user']['username'];
                     @mkdir($directory);
-					
-					$console->graphProgressBarCreate();
-					$console->graphProgressBarUpdate(0, count($reels_media['items']));
+                    
+                    $console->graphProgressBarCreate();
+                    $console->graphProgressBarUpdate(0, count($reels_media['items']));
                     foreach ($reels_media['items'] as $id => $story) {
                         $time_public = $story['taken_at_timestamp'];
                         switch ($story['__typename']) {
@@ -177,13 +177,13 @@
                                     file_put_contents($filename, file_get_contents($image_maxres['src']));
                             break;
                         }
-						$console->graphProgressBarUpdate($id+1, count($reels_media['items']));
+                        $console->graphProgressBarUpdate($id+1, count($reels_media['items']));
                     }
-					$console->graphProgressBarClose();
-					$console->graphEmptyLine();
-					$console->graphEmptyLine();
+                    $console->graphProgressBarClose();
+                    $console->graphEmptyLine();
+                    $console->graphEmptyLine();
                 }
-				
+                
             }
         }
         $console->graphDottedLine();
@@ -212,14 +212,14 @@
         curl_setopt($curl,CURLOPT_COOKIEJAR, __cookie_path); 
         curl_setopt($curl,CURLOPT_COOKIEFILE, __cookie_path); 
         $m=curl_exec($curl);
-		
-		$json_1 = json_decode($m, true);
-		$json_2 = json_decode(@gzdecode($m), true);
-		
-		if (is_array($json_2)) return $json_2;
-		if (is_array($json_1)) return $json_1;
-		
-		return false;
+        
+        $json_1 = json_decode($m, true);
+        $json_2 = json_decode(@gzdecode($m), true);
+        
+        if (is_array($json_2)) return $json_2;
+        if (is_array($json_1)) return $json_1;
+        
+        return false;
    }
     
     function urlQuery($url, $par_array = array()) {
@@ -241,14 +241,14 @@
         curl_setopt($curl,CURLOPT_COOKIEFILE, __cookie_path); 
         curl_setopt($curl, CURLOPT_POSTFIELDS, $post);
         $m=curl_exec($curl);
-		
-		$json_1 = json_decode($m, true);
-		$json_2 = json_decode(@gzdecode($m), true);
-		
-		if (is_array($json_2)) return $json_2;
-		if (is_array($json_1)) return $json_1;
-		
-		return false;
+        
+        $json_1 = json_decode($m, true);
+        $json_2 = json_decode(@gzdecode($m), true);
+        
+        if (is_array($json_2)) return $json_2;
+        if (is_array($json_1)) return $json_1;
+        
+        return false;
     }
     
     function toGetQuery($array) {
