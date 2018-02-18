@@ -31,5 +31,5 @@
 
 Всем спасибо за использование моей программы.
 
-UDP. Скриншот теста на Ubuntu Linux 
-![](https://ivan-Alone.github.io/imageres-storage/onLinux.png)
+UDP. Скриншот теста на Linux Ubuntu 
+![](https://ivan-Alone.github.io/imageres-storage/onLinuxNew.png)
