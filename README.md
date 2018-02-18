@@ -13,7 +13,7 @@
 ```curl -s https://php-osx.liip.ch/install.sh | bash -s 7.2```
 
 На \*NIX'ах настраиваем разрешение на выполнение файла **InstaStories.sh**, например так: 
-```chmod 777 InstaStories.sh```
+```chmod +x InstaStories.sh```
 
 Далее запускаем файл, зависящий от ОС (**InstaStories.sh** - **\*NIX**, **InstaStories.cmd** - **Windows**), и видим следующее окно:
 
