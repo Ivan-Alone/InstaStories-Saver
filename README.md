@@ -4,9 +4,13 @@
 
 Всё предельно просто, скачиваем архив с программой, распаковываем. Устанавливаем PHP:
 
-* Windows: скачиваем отсюда архив: [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe** (либо распаковываем все файлы в папку **bin** скачанного архива), скачиваем [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) и кладём в папку с **php.exe**
+* Windows: 
+Скачиваем отсюда архив: [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe** (либо распаковываем все файлы в папку **bin** скачанного архива), скачиваем [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) и кладём в папку с **php.exe**
 * Linux Debian/Ubuntu: 
 ```sudo apt install php php-curl php-gd```
+* Mac OS:
+У вас должен быть активирован пакет **Command Line Tools**! PHP по умолчанию установлен в системе. Если это не так (программа не работает), выполните эту команду к терминале:
+```curl -s https://php-osx.liip.ch/install.sh | bash -s 7.2```
 
 На \*NIX'ах настраиваем разрешение на выполнение файла **InstaStories.sh**, например так: 
 ```chmod 777 InstaStories.sh```
