@@ -7,7 +7,7 @@ Program for saving Instagram Stories
 All it's easy. You must download zip-archive of this repository and unpack it in any directory. Next you must install PHP:
 
 * Windows: 
-Download and install (if wasn't installed before) [VC2015 Redist](https://www.microsoft.com/ru-RU/download/details.aspx?id=48145). 
+Download and install (if wasn't installed before) [VC2015 Redist](https://www.microsoft.com/en-US/download/details.aspx?id=48145). 
 Download archive of PHP (VC15 x86 Thread Safe): [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), unpack it in any directory, next you must add PHP folder's address to **Path** (or you can unpack all files to **bin** folder at unpacked repository folder), next you must download [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) and move it to folder with **php.exe** file
 * Linux Debian/Ubuntu: 
 ```sudo apt install php php-curl php-gd```
