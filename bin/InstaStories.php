@@ -193,53 +193,48 @@
     
     $console->graphEmptyLine();
     $console->graphEndingLine();
-    $console->graphFinish();
+    
+    if (!in_array('--no-exit-pause', $argv)) {
+        $console->graphFinish();
+    } else {
+        $console = null;
+        exit;
+    }
     
 
     function urlGetQuery($url) {
         @mkdir(__temp);
-        $header = array('Accept:', 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0', 'Accept: */*', 'Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3', 'Accept-Encoding: gzip', 'Referer: https://www.instagram.com/', 'X-CSRFToken: '.@__csrftoken, 'X-Instagram-AJAX: 1', 'Content-Type: application/x-www-form-urlencoded', 'X-Requested-With: XMLHttpRequest', 'Connection: keep-alive');
-        $curl = curl_init();
-        if (@__curl_proxy != null && @__curl_proxy != '__curl_proxy') {
-            curl_setopt($curl, CURLOPT_PROXY, __curl_proxy);
-        }
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl,CURLOPT_RETURNTRANSFER,1);
-        curl_setopt($curl,CURLINFO_HEADER_OUT,1);
-        curl_setopt($curl,CURLOPT_SSL_VERIFYPEER, 0); 
-        curl_setopt($curl,CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($curl,CURLOPT_COOKIEJAR, __cookie_path); 
-        curl_setopt($curl,CURLOPT_COOKIEFILE, __cookie_path); 
-        $m=curl_exec($curl);
         
-        $json_1 = json_decode($m, true);
-        $json_2 = json_decode(@gzdecode($m), true);
-        
-        if (is_array($json_2)) return $json_2;
-        if (is_array($json_1)) return $json_1;
-        
-        return false;
-   }
+        return curlRequest(array(
+            CURLOPT_URL => $url
+        ));
+    }
     
     function urlQuery($url, $par_array = array()) {
         @mkdir(__temp);
         $post = substr(toGetQuery($par_array), 0, -1);
-        $header = array('Accept:', 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0', 'Accept: */*', 'Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3', 'Accept-Encoding: gzip', 'Referer: https://www.instagram.com/', 'X-CSRFToken: '.@__csrftoken, 'X-Instagram-AJAX: 1', 'Content-Type: application/x-www-form-urlencoded', 'X-Requested-With: XMLHttpRequest', 'Connection: keep-alive');
+        
+        return curlRequest(array(
+            CURLOPT_URL => $url,
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => $post
+        ));
+    }
+    
+    function curlRequest($curl_opt_array) {
         $curl = curl_init();
         if (@__curl_proxy != null && @__curl_proxy != '__curl_proxy') {
             curl_setopt($curl, CURLOPT_PROXY, __curl_proxy);
         }
-        curl_setopt($curl, CURLOPT_URL, $url);
+        foreach ($curl_opt_array as $id => $value) {
+            curl_setopt($curl, $id, $value);
+        }
         curl_setopt($curl,CURLOPT_RETURNTRANSFER,1);
-        curl_setopt($curl,CURLINFO_HEADER_OUT,1);
         curl_setopt($curl,CURLOPT_SSL_VERIFYPEER, 0); 
         curl_setopt($curl,CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Accept:', 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0', 'Accept: */*', 'Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3', 'Accept-Encoding: gzip', 'Referer: https://www.instagram.com/', 'X-CSRFToken: '.@__csrftoken, 'X-Instagram-AJAX: 1', 'Content-Type: application/x-www-form-urlencoded', 'X-Requested-With: XMLHttpRequest', 'Connection: keep-alive'));
         curl_setopt($curl,CURLOPT_COOKIEJAR, __cookie_path); 
         curl_setopt($curl,CURLOPT_COOKIEFILE, __cookie_path); 
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $post);
         $m=curl_exec($curl);
         
         $json_1 = json_decode($m, true);
