@@ -6,14 +6,28 @@ Program for saving Instagram Stories
 
 All it's easy. You must download zip-archive of this repository and unpack it in any directory. Next you must install PHP:
 
-* Windows: 
+* Windows 7-10: 
+
 Download and install (if wasn't installed before) [VC2015 Redist](https://www.microsoft.com/en-US/download/details.aspx?id=48145). 
-Download archive of PHP (VC15 x86 Thread Safe): [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), unpack it in any directory, next you must add PHP folder's address to **Path** (or you can unpack all files to **bin** folder at unpacked repository folder), next you must download [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) and move it to folder with **php.exe** file
+
+Download archive of [PHP 7.2.2](http://windows.php.net/downloads/releases/php-7.2.2-Win32-VC15-x86.zip), unpack it in any directory, next you must add PHP folder's address to **%Path%** (or you can unpack all files to **bin** folder of InstaStories' unpacked program), next you must download [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) and move it to folder with **php.exe** file
+
+* Windows XP: 
+
+Download and install (if wasn't installed before) [VC2008 Redist](https://www.microsoft.com/en-US/download/details.aspx?id=29). 
+
+Download archive of [PHP 5.4.45](http://windows.php.net/downloads/releases/archives/php-5.4.45-Win32-VC9-x86.zip), unpack it in any directory, next you must add PHP folder's address to **%Path%** (or you can unpack all files to **bin** folder of InstaStories' unpacked program), next you must download [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) and move it to folder with **php.exe** file
+
 * Linux Debian/Ubuntu: 
+
 ```sudo apt install php php-curl php-gd```
+
 * Mac OS:
+
 You must activate **Command Line Tools** package! PHP is default installed to your system. In any other case (Saver can't working), execute this command in Terminal:
+
 ```curl -s https://php-osx.liip.ch/install.sh | bash -s 7.2```
+
 
 On \*NIX systems you must give permission for executing **InstaStories.sh**, for example:
 ```chmod +x InstaStories.sh```
