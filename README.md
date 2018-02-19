@@ -6,17 +6,30 @@
 
 Всё предельно просто, скачиваем архив с программой, распаковываем. Устанавливаем PHP:
 
-* Windows: 
+* Windows 7-10: 
+
 Скачиваем и устанавливаем (если уже не установлен) [VC2015 Redist](https://www.microsoft.com/ru-RU/download/details.aspx?id=48145). 
-Скачиваем отсюда архив (VC15 x86 Thread Safe): [http://windows.php.net/download#php-7.2](http://windows.php.net/download#php-7.2), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe** (либо распаковываем все файлы в папку **bin** скачанного архива), скачиваем [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) и кладём в папку с **php.exe**
+
+Скачиваем архив с [PHP 7.2.2](http://windows.php.net/downloads/releases/php-7.2.2-Win32-VC15-x86.zip), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe** (либо распаковываем все файлы в папку **bin** распакованной программы), скачиваем [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) и кладём в папку с **php.exe**
+
+* Windows XP:
+
+Скачиваем и устанавливаем (если уже не установлен) [VC2008 Redist](https://www.microsoft.com/ru-RU/download/details.aspx?id=29).
+
+Скачиваем архив с [PHP 5.4.45](http://windows.php.net/downloads/releases/archives/php-5.4.45-Win32-VC9-x86.zip), распаковываем куда-либо, добавляем в **Path** адрес к папке с **php.exe** (либо распаковываем все файлы в папку **bin** распакованной программы), скачиваем [php.ini](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/php.ini) и кладём в папку с **php.exe**
+
 * Linux Debian/Ubuntu: 
+
 ```sudo apt install php php-curl php-gd```
+
 * Mac OS:
+
 У вас должен быть активирован пакет **Command Line Tools**! PHP по умолчанию установлен в системе. Если это не так (программа не работает), выполните эту команду к терминале:
 ```curl -s https://php-osx.liip.ch/install.sh | bash -s 7.2```
 
 На \*NIX'ах настраиваем разрешение на выполнение файла **InstaStories.sh**, например так: 
 ```chmod +x InstaStories.sh```
+
 
 Далее запускаем файл, зависящий от ОС (**InstaStories.sh** - **\*NIX**, **InstaStories.cmd** - **Windows**), и видим следующее окно:
 
