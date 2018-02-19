@@ -1,3 +1,3 @@
 @echo off
 cd bin\
-php InstaStories.php ../
+php InstaStories.php ../ %1 %2 %3
