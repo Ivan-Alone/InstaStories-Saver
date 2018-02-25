@@ -4,6 +4,8 @@
 
 Program for saving Instagram Stories
 
+#### Installing and using
+
 All it's easy. You must download zip-archive of this repository and unpack it in any directory. Next you must install PHP:
 
 * Windows 7-10: 
@@ -46,11 +48,38 @@ Enter your Instagram login and password and... This program downloads every acce
 
 ![](https://raw.githubusercontent.com/Ivan-Alone/imageres-storage/master/test_view.png)
 
-Program remembers your authorisation data, on next times you'll can download Stories by simple running this program and waited some time.
+Program remembers your authorisation data, on next times you'll can download Stories by simple running this program and waited some time. If you want to remove your authorisation data, just remove **temp** folder.
+
 
 If anything is broken, first of all remove **temp** folder and pass the authorisation again. If your problem doesn't leaves - create Issue here, on GitHub.
 
 Thank all for using of my program!
 
-UPD. Ubuntu Linux test screenshot
+Ubuntu Linux test screenshot
 ![](https://ivan-Alone.github.io/imageres-storage/onLinuxNew.png)
+
+
+#### Configuration file
+
+In the **bin** folder, in addition to code files and program resources, there is also a configuration file **config.json**.
+
+The configuration is stored in the JSON format. The following directives are supported (the absence of ***emphasized*** directives will lead to unpredictable consequences):
+
+* ***stories_folder*** - folder name for saved stories (default - **Instagram**)
+* ***temp_folder*** - name of the temporary folder (default - **temp**)
+* ***cookies_storage*** - name of the file with user's authorization data (cookies) (default - **curl_cookies.lcf**)
+* **loading_sprite_1** - specifies the path from the root folder to the second boot image (default - **bin/instaload.png.conpic2**)
+* **loading_sprite_2** - specifies the path from the root folder to the second boot image (default - **bin/myLogo.png.conpic2**)
+* **incognito** - enable *incognito* mode (the author can't check that you watched his stories) (default is **missing**, accepts *true*/*false*)
+
+
+#### Scripting and Task Scheduler
+
+This program can be used with your task scheduler. It is enough that the scheduler runs the start file in the folder with its.
+
+To simplify automation, the program accepts the following arguments:
+
+* **--no-bootsprites** - doesn't show pictures when program starts up
+* **--no-exit-pause** - doesn't wait user's action when program finished
+
+It's enough for a simple planned autorun. Any other thing is job for task scheduler.
