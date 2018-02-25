@@ -4,9 +4,13 @@
         Copyright Ivan_Alone, 2018
         GNU General Public License 3
     */
-        
+    
+	/*  Algorhythm  ---  Start  */
+	
     echo 'Loading...' . PHP_EOL;
-    if ($argv[1] == null) $argv[1] = $_GET['addr'];
+    
+    $config = @json_decode(@file_get_contents('config.json'), true);
+    
     $save_path = replaceCycle($argv[1] != null && file_exists($argv[1]) ? $argv[1] . '/' : './', '/', 2);
     
     // Activates Fiddler 2 Proxy - useful for debugging
@@ -14,9 +18,9 @@
     
     include ('ConsoleGraph.class.php');
     
-    define  ('__instagram', $save_path.'Instagram'); 
-    define  ('__temp', $save_path.'temp'); 
-    define  ('__cookie_path', __temp.'/curl_cookies.lcf');
+    define  ('__instagram', $save_path.$config['stories_folder']); 
+    define  ('__temp', $save_path.$config['temp_folder']); 
+    define  ('__cookie_path', __temp.'/'.$config['cookies_storage']);
     
     $cookies = @extractCookies(@file_get_contents(__cookie_path));
     if (@$cookies['www.instagram.com']['csrftoken'] == null) {
@@ -24,13 +28,12 @@
         $cookies = @extractCookies(@file_get_contents(__cookie_path));
     }
     
-    define('__csrftoken', $cookies['www.instagram.com']['csrftoken']['value']);
+    $__csrftoken = $cookies['www.instagram.com']['csrftoken']['value'];
     
-    $loading_sprite = @file_get_contents($save_path.'bin/instaload.png.conpic2');
-    $developer_sprite = @file_get_contents($save_path.'bin/myLogo.png.conpic2');
+    $loading_sprite = @file_get_contents($save_path.$config['loading_sprite_1']);
+    $developer_sprite = @file_get_contents($save_path.$config['loading_sprite_2']);
     
     echo 'Loading done!' . PHP_EOL;
-    
     
   //$console = new ConsoleGraph('__do_not_configure_window');
     $console = new ConsoleGraph();
@@ -126,17 +129,25 @@
             $console->graphEmptyLine();
             $console->graphDottedLine();
         }
+        $__csrftoken = $cookies['www.instagram.com']['csrftoken']['value'];
     }
     
     $console->graphEmptyLine();
     
     if ($user != null) {
+        if (@$config['incognito']) {
+            $console->graphWriteToCenterLine('!!! Incognito mode is activated !!!');
+            $console->graphEmptyLine();
+            $console->graphEmptyLine();
+        }
+        
         $feed = urlGetQuery('https://www.instagram.com/?__a=1');
         $console->graphWriteToLine('Grabbing subscribes from '.($feed['graphql']['user']['username'] == null ? 'your' : ($feed['graphql']['user']['username'].'\'s')).' feed...');
         $console->graphEmptyLine();
         
-        $stories = urlGetQuery('https://www.instagram.com/graphql/query/?query_id=17890626976041463&variables={}')['data']['user']['feed_reels_tray']['edge_reels_tray_to_reel']['edges'];
-        $console->graphWriteToLine('Subscribes grabed, going to downloading...');
+        $stories = urlGetQuery('https://www.instagram.com/graphql/query/?query_id=17890626976041463&variables={}');
+        $stories = $stories['data']['user']['feed_reels_tray']['edge_reels_tray_to_reel']['edges'];
+        $console->graphWriteToLine('Subscribes grabbed, going to downloading...');
         $console->graphEmptyLine();
         $console->graphDottedLine();
         $console->graphEmptyLine();
@@ -173,8 +184,23 @@
                                 
                                 $filename = $directory.'/'.$reels_media['user']['username'].' at '.date('Y.m.d - H.i.s',$time_public).($story['__typename'] == 'GraphStoryVideo' ? '.mp4' : '.jpg');
                                 
-                                if (!file_exists($filename))
-                                    file_put_contents($filename, file_get_contents($image_maxres['src']));
+                                if (!file_exists($filename)) {
+                                    if (!@$config['incognito']) {
+                                        $status = urlQuery('https://www.instagram.com/stories/reel/seen', array(
+                                            'reelMediaId' => $story['id'], 
+                                            'reelMediaOwnerId' => $story['owner']['id'], 
+                                            'reelId' => $story['owner']['id'], 
+                                            'reelMediaTakenAt' => $story['taken_at_timestamp'], 
+                                            'viewSeenAt' => time()
+                                        ), array(
+                                            'Referer' => 'https://www.instagram.com/stories/'.$user_info['username'].'/'
+                                        ));
+                                    }
+                                    
+                                    $watch_status = @$config['incognito'] ? true : @$status['status'] == 'ok';
+                                    
+                                    if ($watch_status) file_put_contents($filename, file_get_contents($image_maxres['src']));
+                                }
                             break;
                         }
                         $console->graphProgressBarUpdate($id+1, count($reels_media['items']));
@@ -200,17 +226,22 @@
         $console = null;
         exit;
     }
-    
-
-    function urlGetQuery($url) {
+	
+	/*  Algorhythm  ---  End  */
+	
+	
+	
+	/*  Functions  ---  Start  */
+	
+    function urlGetQuery($url, $header_plus = array()) {
         @mkdir(__temp);
         
         return curlRequest(array(
             CURLOPT_URL => $url
-        ));
+        ), $header_plus);
     }
     
-    function urlQuery($url, $par_array = array()) {
+    function urlQuery($url, $par_array = array(), $header_plus = array()) {
         @mkdir(__temp);
         $post = substr(toGetQuery($par_array), 0, -1);
         
@@ -218,10 +249,12 @@
             CURLOPT_URL => $url,
             CURLOPT_POST => 1,
             CURLOPT_POSTFIELDS => $post
-        ));
+        ), $header_plus);
     }
     
-    function curlRequest($curl_opt_array) {
+    function curlRequest($curl_opt_array, $header_plus = array()) {
+        global $__csrftoken;
+        
         $curl = curl_init();
         if (@__curl_proxy != null && @__curl_proxy != '__curl_proxy') {
             curl_setopt($curl, CURLOPT_PROXY, __curl_proxy);
@@ -229,21 +262,46 @@
         foreach ($curl_opt_array as $id => $value) {
             curl_setopt($curl, $id, $value);
         }
+    
+        $header = array(
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0', 
+            'Accept' => '*/*', 
+            'Accept-Language' => 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3', 
+            'Accept-Encoding' => 'gzip', 
+            'Referer' => 'https://www.instagram.com/', 
+            'X-CSRFToken' => @$__csrftoken, 
+            'X-Instagram-AJAX' => '1', 
+            'Content-Type' => 'application/x-www-form-urlencoded', 
+            'X-Requested-With' => 'XMLHttpRequest', 
+            'Connection' => 'keep-alive'
+        );
+        foreach ($header_plus as $name => $value) {
+            $header[$name] = $value;
+        }
+        
         curl_setopt($curl,CURLOPT_RETURNTRANSFER,1);
         curl_setopt($curl,CURLOPT_SSL_VERIFYPEER, 0); 
         curl_setopt($curl,CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Accept:', 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0', 'Accept: */*', 'Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3', 'Accept-Encoding: gzip', 'Referer: https://www.instagram.com/', 'X-CSRFToken: '.@__csrftoken, 'X-Instagram-AJAX: 1', 'Content-Type: application/x-www-form-urlencoded', 'X-Requested-With: XMLHttpRequest', 'Connection: keep-alive'));
+        curl_setopt($curl, CURLOPT_HTTPHEADER, compileHeader($header, array('Accept')));
         curl_setopt($curl,CURLOPT_COOKIEJAR, __cookie_path); 
         curl_setopt($curl,CURLOPT_COOKIEFILE, __cookie_path); 
-        $m=curl_exec($curl);
+		
+        $data = curl_exec($curl);
         
-        $json_1 = json_decode($m, true);
-        $json_2 = json_decode(@gzdecode($m), true);
+        $json_1 = json_decode($data, true);
+        $json_2 = json_decode(function_exists("gzdecode") ? @gzdecode($data) : gzinflate(substr($data, 10, -8)), true);
         
         if (is_array($json_2)) return $json_2;
         if (is_array($json_1)) return $json_1;
         
         return false;
+    }
+    
+    function compileHeader($header_array, $remove_array) {
+        $header = array();
+        foreach($remove_array as $val) $header[] = $val.':';
+        foreach($header_array as $key => $val) $header[] = $key . ': ' . $val;
+        return $header;
     }
     
     function toGetQuery($array) {
@@ -286,3 +344,4 @@
         return $cookies;
     }
     
+	/*  Functions  ---  End  */
