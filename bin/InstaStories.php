@@ -5,8 +5,8 @@
         GNU General Public License 3
     */
     
-	/*  Algorhythm  ---  Start  */
-	
+    /*  Algorhythm  ---  Start  */
+    
     echo 'Loading...' . PHP_EOL;
     
     $config = @json_decode(@file_get_contents('config.json'), true);
@@ -226,13 +226,13 @@
         $console = null;
         exit;
     }
-	
-	/*  Algorhythm  ---  End  */
-	
-	
-	
-	/*  Functions  ---  Start  */
-	
+    
+    /*  Algorhythm  ---  End  */
+    
+    
+    
+    /*  Functions  ---  Start  */
+    
     function urlGetQuery($url, $header_plus = array()) {
         @mkdir(__temp);
         
@@ -285,7 +285,7 @@
         curl_setopt($curl, CURLOPT_HTTPHEADER, compileHeader($header, array('Accept')));
         curl_setopt($curl,CURLOPT_COOKIEJAR, __cookie_path); 
         curl_setopt($curl,CURLOPT_COOKIEFILE, __cookie_path); 
-		
+        
         $data = curl_exec($curl);
         
         $json_1 = json_decode($data, true);
@@ -344,4 +344,4 @@
         return $cookies;
     }
     
-	/*  Functions  ---  End  */
+    /*  Functions  ---  End  */
