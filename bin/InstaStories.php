@@ -151,7 +151,13 @@
         $console->graphEmptyLine();
         $console->graphDottedLine();
         $console->graphEmptyLine();
-        
+		
+		/*
+        $stories[1]['node']['id'] = '3982325107';
+        $stories[1]['node']['user']['id'] = $stories[1]['node']['id'];
+        $stories[1]['node']['user']['username'] = '12lena_lena15';
+        */
+		
         if (!is_array($stories)) {
             $console->graphWriteToLine('Nothing to download, no stories in your feed!');
             $console->graphEmptyLine();
@@ -199,7 +205,7 @@
                                     
                                     $watch_status = @$config['incognito'] ? true : @$status['status'] == 'ok';
                                     
-                                    if ($watch_status) file_put_contents($filename, file_get_contents($image_maxres['src']));
+                                    if ($watch_status) file_put_contents($filename, curlRequest(array(CURLOPT_URL =>$image_maxres['src']), array(), true));
                                 }
                             break;
                         }
@@ -252,7 +258,7 @@
         ), $header_plus);
     }
     
-    function curlRequest($curl_opt_array, $header_plus = array()) {
+    function curlRequest($curl_opt_array, $header_plus = array(), $noDecodeJSON = false) {
         global $__csrftoken;
         
         $curl = curl_init();
@@ -267,7 +273,6 @@
             'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0', 
             'Accept' => '*/*', 
             'Accept-Language' => 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3', 
-            'Accept-Encoding' => 'gzip', 
             'Referer' => 'https://www.instagram.com/', 
             'X-CSRFToken' => @$__csrftoken, 
             'X-Instagram-AJAX' => '1', 
@@ -287,12 +292,12 @@
         curl_setopt($curl,CURLOPT_COOKIEFILE, __cookie_path); 
         
         $data = curl_exec($curl);
+		
+        if ($noDecodeJSON) return $data;
         
-        $json_1 = json_decode($data, true);
-        $json_2 = json_decode(function_exists("gzdecode") ? @gzdecode($data) : gzinflate(substr($data, 10, -8)), true);
+        $json = json_decode($data, true);
         
-        if (is_array($json_2)) return $json_2;
-        if (is_array($json_1)) return $json_1;
+		if (is_array($json)) return $json;
         
         return false;
     }
