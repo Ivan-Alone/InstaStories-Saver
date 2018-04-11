@@ -212,7 +212,7 @@
             
             $isWin10 = $this->getWinNT_Version() == '10.0';
             
-            if ((!self::isWin32() || $isWin10) && true) {
+            if ((!self::isWin32() || $isWin10) && !$this->useStarsAsWinBuilders) {
                 $modes = array(' ', '▄', '▀', '█');
             } else {
                 $modes = array(' ', ',', '\'', '#');
