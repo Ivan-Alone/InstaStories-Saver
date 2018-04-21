@@ -13,22 +13,25 @@
     
     $save_path = replaceCycle($argv[1] != null && file_exists($argv[1]) ? $argv[1] . '/' : './', '/', 2);
     
-    // Activates Fiddler 2 Proxy - useful for debugging
-    // define  ('__curl_proxy', '127.0.0.1:8888'); 
-    
     include ('ConsoleGraph.class.php');
+    include ('Network.class.php');
     
     define  ('__instagram', $save_path.$config['stories_folder']); 
     define  ('__temp', $save_path.$config['temp_folder']); 
     define  ('__cookie_path', __temp.'/'.$config['cookies_storage']);
-    
-    $cookies = @extractCookies(@file_get_contents(__cookie_path));
-    if (@$cookies['www.instagram.com']['csrftoken'] == null) {
-        urlQuery('https://www.instagram.com');
-        $cookies = @extractCookies(@file_get_contents(__cookie_path));
+	
+	@mkdir(__temp);
+	
+    // Uncomment for activate Fiddler Proxy - useful for debugging
+	$net = new Network(__cookie_path/*/, '127.0.0.1:8888'/**/);
+	
+    $cookies = new CurlCookies(__cookie_path);
+    if ($cookies->getValidValue('csrftoken') == null) {
+        $net->PostQuery('https://www.instagram.com', array(), getInstagramHeaders());
+        $cookies->reload();
     }
     
-    $__csrftoken = $cookies['www.instagram.com']['csrftoken']['value'];
+    $__csrftoken = $cookies->getValidValue('csrftoken');
     
     $loading_sprite = @file_get_contents($save_path.$config['loading_sprite_1']);
     $developer_sprite = @file_get_contents($save_path.$config['loading_sprite_2']);
@@ -55,9 +58,9 @@
     
     $user = null;    
     
-    if (@$cookies['www.instagram.com']['ds_user_id'] != null) {
+    if ($cookies->getValidValue('ds_user_id') != null) {
     
-        $user = $cookies['www.instagram.com']['ds_user_id']['value'];
+        $user = $cookies->getValidValue('ds_user_id');
         
     } else {
         while (true) {
@@ -72,15 +75,15 @@
             $console->graphEmptyLine();
             
             if ($login != null && $pass != null) {
-                $auth_json = urlQuery('https://www.instagram.com/accounts/login/ajax/', array(
+                $auth_json = $net->PostQuery('https://www.instagram.com/accounts/login/ajax/', array(
                     'username' => $login,
                     'password' => $pass
-                ));
-                
-                $cookies = @extractCookies(@file_get_contents(__cookie_path));
+                ), getInstagramHeaders());
+				
+                $cookies->reload();
                 
                 if (@$auth_json['authenticated']) {
-                    $user = $cookies['www.instagram.com']['ds_user_id']['value'];
+                    $user = $cookies->getValidValue('ds_user_id');
                     $console->graphWriteToLine('Logged in in '.date('H:i d.m.Y'));
                     
                     $console->graphEmptyLine();
@@ -89,9 +92,9 @@
                     break;
                 } elseif (@$auth_json['message'] == 'checkpoint_required') {
                     $checkpoint_url = $auth_json['checkpoint_url'];
-                    $checkout_data_dcd = urlQuery('https://www.instagram.com'.$checkpoint_url, array(
+                    $checkout_data_dcd = $net->PostQuery('https://www.instagram.com'.$checkpoint_url, array(
                         'choice' => 1
-                    ));
+                    ), getInstagramHeaders());
                     
                     $console->graphWriteToLine('Attention: security code was sent to '.$checkout_data_dcd['fields']['contact_point']);
                     $sequrity_data = array();
@@ -104,16 +107,16 @@
                         }
                         $console->graphWriteToLine('Enter your code: ');
                         
-                        $sequrity_data = urlQuery('https://www.instagram.com'.$checkpoint_url, array(
+                        $sequrity_data = $net->PostQuery('https://www.instagram.com'.$checkpoint_url, array(
                             'security_code' => $console->graphReadLn()
-                        ));
+                        ), getInstagramHeaders());
                         
                         $EC_TEST++;
                         $console->graphEmptyLine();
                     }
                     
-                    $cookies = @extractCookies(@file_get_contents(__cookie_path));
-                    $user = $cookies['www.instagram.com']['ds_user_id']['value'];
+                    $cookies->reload();
+                    $user = $cookies->getValidValue('ds_user_id');
                     $console->graphWriteToLine('Logged in in '.date('H:i d.m.Y'));
                     
                     $console->graphEmptyLine();
@@ -129,7 +132,7 @@
             $console->graphEmptyLine();
             $console->graphDottedLine();
         }
-        $__csrftoken = $cookies['www.instagram.com']['csrftoken']['value'];
+        $__csrftoken = $cookies->getValidValue('csrftoken');
     }
     
     $console->graphEmptyLine();
@@ -141,22 +144,16 @@
             $console->graphEmptyLine();
         }
         
-        $feed = urlGetQuery('https://www.instagram.com/?__a=1');
-        $console->graphWriteToLine('Grabbing subscribes from '.($feed['graphql']['user']['username'] == null ? 'your' : ($feed['graphql']['user']['username'].'\'s')).' feed...');
+        $feed = $net->GetQuery('https://www.instagram.com/?__a=1', getInstagramHeaders());
+        $console->graphWriteToLine('Grabbing subscribes from '.$feed['graphql']['user']['username'].'\'s feed...');
         $console->graphEmptyLine();
         
-        $stories = urlGetQuery('https://www.instagram.com/graphql/query/?query_id=17890626976041463&variables={}');
+        $stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17890626976041463&variables={}', getInstagramHeaders());
         $stories = $stories['data']['user']['feed_reels_tray']['edge_reels_tray_to_reel']['edges'];
         $console->graphWriteToLine('Subscribes grabbed, going to downloading...');
         $console->graphEmptyLine();
         $console->graphDottedLine();
         $console->graphEmptyLine();
-		
-		/*
-        $stories[1]['node']['id'] = '3982325107';
-        $stories[1]['node']['user']['id'] = $stories[1]['node']['id'];
-        $stories[1]['node']['user']['username'] = '12lena_lena15';
-        */
 		
         if (!is_array($stories)) {
             $console->graphWriteToLine('Nothing to download, no stories in your feed!');
@@ -170,7 +167,7 @@
                 $console->graphWriteToLine('Reading & downloading Stories by '.$user_info['username'].'...');
                 $console->graphEmptyLine();
                 
-                $user_stories = urlGetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}');
+                $user_stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}', getInstagramHeaders());
                 @mkdir(__instagram);
                 
                 foreach($user_stories['data']['reels_media'] as $reels_media) {
@@ -192,20 +189,21 @@
                                 
                                 if (!file_exists($filename)) {
                                     if (!@$config['incognito']) {
-                                        $status = urlQuery('https://www.instagram.com/stories/reel/seen', array(
+										$timestamp = time();
+                                        $status = $net->PostQuery('https://www.instagram.com/stories/reel/seen', array(
                                             'reelMediaId' => $story['id'], 
                                             'reelMediaOwnerId' => $story['owner']['id'], 
                                             'reelId' => $story['owner']['id'], 
-                                            'reelMediaTakenAt' => $story['taken_at_timestamp'], 
-                                            'viewSeenAt' => time()
-                                        ), array(
-                                            'Referer' => 'https://www.instagram.com/stories/'.$user_info['username'].'/'
-                                        ));
+                                            'reelMediaTakenAt' => $timestamp, 
+                                            'viewSeenAt' => $timestamp
+                                        ), getInstagramHeaders(array(
+                                            'Referer' => 'https://www.instagram.com/stories/'.$feed['graphql']['user']['username'].'/'
+                                        )));
                                     }
-                                    
-                                    $watch_status = @$config['incognito'] ? true : @$status['status'] == 'ok';
-                                    
-                                    if ($watch_status) file_put_contents($filename, curlRequest(array(CURLOPT_URL =>$image_maxres['src']), array(), true));
+									
+                                    if (@$config['incognito'] ? true : @$status['status'] == 'ok') {
+										file_put_contents($filename, $net->Request(array(CURLOPT_URL =>$image_maxres['src']), getInstagramHeaders(), true));
+									}
                                 }
                             break;
                         }
@@ -239,85 +237,21 @@
     
     /*  Functions  ---  Start  */
     
-    function urlGetQuery($url, $header_plus = array()) {
-        @mkdir(__temp);
-        
-        return curlRequest(array(
-            CURLOPT_URL => $url
-        ), $header_plus);
-    }
-    
-    function urlQuery($url, $par_array = array(), $header_plus = array()) {
-        @mkdir(__temp);
-        $post = substr(toGetQuery($par_array), 0, -1);
-        
-        return curlRequest(array(
-            CURLOPT_URL => $url,
-            CURLOPT_POST => 1,
-            CURLOPT_POSTFIELDS => $post
-        ), $header_plus);
-    }
-    
-    function curlRequest($curl_opt_array, $header_plus = array(), $noDecodeJSON = false) {
-        global $__csrftoken;
-        
-        $curl = curl_init();
-        if (@__curl_proxy != null && @__curl_proxy != '__curl_proxy') {
-            curl_setopt($curl, CURLOPT_PROXY, __curl_proxy);
-        }
-        foreach ($curl_opt_array as $id => $value) {
-            curl_setopt($curl, $id, $value);
-        }
-    
-        $header = array(
-            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0', 
-            'Accept' => '*/*', 
-            'Accept-Language' => 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3', 
-            'Referer' => 'https://www.instagram.com/', 
-            'X-CSRFToken' => @$__csrftoken, 
-            'X-Instagram-AJAX' => '1', 
-            'Content-Type' => 'application/x-www-form-urlencoded', 
-            'X-Requested-With' => 'XMLHttpRequest', 
-            'Connection' => 'keep-alive'
-        );
-        foreach ($header_plus as $name => $value) {
-            $header[$name] = $value;
-        }
-        
-        curl_setopt($curl,CURLOPT_RETURNTRANSFER,1);
-        curl_setopt($curl,CURLOPT_SSL_VERIFYPEER, 0); 
-        curl_setopt($curl,CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, compileHeader($header, array('Accept')));
-        curl_setopt($curl,CURLOPT_COOKIEJAR, __cookie_path); 
-        curl_setopt($curl,CURLOPT_COOKIEFILE, __cookie_path); 
-        
-        $data = curl_exec($curl);
-		
-        if ($noDecodeJSON) return $data;
-        
-        $json = json_decode($data, true);
-        
-		if (is_array($json)) return $json;
-        
-        return false;
-    }
-    
-    function compileHeader($header_array, $remove_array) {
-        $header = array();
-        foreach($remove_array as $val) $header[] = $val.':';
-        foreach($header_array as $key => $val) $header[] = $key . ': ' . $val;
-        return $header;
-    }
-    
-    function toGetQuery($array) {
-        $get = null;
-        if (is_array($array))
-            foreach ($array as $k => $v) {
-                $get .= urlencode($k) . '=' . urlencode($v) . '&';
-            }
-        return $get == null ? null : $get;
-    }
-    
+	function getInstagramHeaders($plus = array()) {
+		global $__csrftoken;
+		$elite = array(
+			'Referer' => 'https://www.instagram.com/', 
+			'X-CSRFToken' => @$__csrftoken, 
+			'X-Instagram-AJAX' => '1', 
+			'Content-Type' => 'application/x-www-form-urlencoded', 
+			'X-Requested-With' => 'XMLHttpRequest'
+		);
+		foreach ($plus as $name => $value) {
+			$elite[$name] = $value;
+		}
+		return $elite;
+	}
+	
     function replaceCycle($string, $replace, $cycle_lenght) {
         if ($cycle_lenght < 2) return $string;
         $find = '';
@@ -328,25 +262,6 @@
             $string = str_replace($find, $replace, $string);
         }
         return $string;
-    }
-    
-    function extractCookies($string) {
-        $cookies = array();
-        $lines = explode("\n", $string);
-        foreach ($lines as $line) {
-            if (isset($line[0]) && substr_count($line, "\t") == 6) {
-                $tokens = explode("\t", $line);
-                $tokens = array_map('trim', $tokens);
-                $cookie = array();
-                $cookie['flag'] = $tokens[1];
-                $cookie['path'] = $tokens[2];
-                $cookie['secure'] = $tokens[3];
-                $cookie['expiration'] = $tokens[4];
-                $cookie['value'] = $tokens[6];
-                $cookies[$tokens[0]][$tokens[5]] = $cookie;
-            }
-        }
-        return $cookies;
     }
     
     /*  Functions  ---  End  */
