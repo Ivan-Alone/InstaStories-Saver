@@ -149,13 +149,13 @@
         $console->graphEmptyLine();
         
         $stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17890626976041463&variables={}', getInstagramHeaders());
-        $stories = $stories['data']['user']['feed_reels_tray']['edge_reels_tray_to_reel']['edges'];
+        $stories = @$stories['data']['user']['feed_reels_tray']['edge_reels_tray_to_reel']['edges'];
         $console->graphWriteToLine('Subscribes grabbed, going to downloading...');
         $console->graphEmptyLine();
         $console->graphDottedLine();
         $console->graphEmptyLine();
 		
-        if (!is_array($stories)) {
+        if (!is_array($stories) || count($stories) < 1) {
             $console->graphWriteToLine('Nothing to download, no stories in your feed!');
             $console->graphEmptyLine();
         } else {
@@ -170,50 +170,37 @@
                 $user_stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}', getInstagramHeaders());
                 @mkdir(__instagram);
                 
-                foreach($user_stories['data']['reels_media'] as $reels_media) {
-                    $directory = __instagram.'/'.$reels_media['user']['username'];
-                    @mkdir($directory);
-                    
-                    $console->graphProgressBarCreate();
-                    $console->graphProgressBarUpdate(0, count($reels_media['items']));
-                    foreach ($reels_media['items'] as $id => $story) {
-                        $time_public = $story['taken_at_timestamp'];
-                        switch ($story['__typename']) {
-                            case 'GraphStoryImage':
-                            case 'GraphStoryVideo':
-                                $images = $story[$story['__typename'] == 'GraphStoryVideo' ? 'video_resources' : 'display_resources'];
-                                $images_count = count($images);
-                                $image_maxres = $images[$images_count-1];
-                                
-                                $filename = $directory.'/'.$reels_media['user']['username'].' at '.date('Y.m.d - H.i.s',$time_public).($story['__typename'] == 'GraphStoryVideo' ? '.mp4' : '.jpg');
-                                
-                                if (!file_exists($filename)) {
-                                    if (!@$config['incognito']) {
-										$timestamp = time();
-                                        $status = $net->PostQuery('https://www.instagram.com/stories/reel/seen', array(
-                                            'reelMediaId' => $story['id'], 
-                                            'reelMediaOwnerId' => $story['owner']['id'], 
-                                            'reelId' => $story['owner']['id'], 
-                                            'reelMediaTakenAt' => $timestamp, 
-                                            'viewSeenAt' => $timestamp
-                                        ), getInstagramHeaders(array(
-                                            'Referer' => 'https://www.instagram.com/stories/'.$feed['graphql']['user']['username'].'/'
-                                        )));
-                                    }
-									
-                                    if (@$config['incognito'] ? true : @$status['status'] == 'ok') {
-										file_put_contents($filename, $net->Request(array(CURLOPT_URL =>$image_maxres['src']), getInstagramHeaders(), true));
-									}
-                                }
-                            break;
-                        }
-                        $console->graphProgressBarUpdate($id+1, count($reels_media['items']));
-                    }
-                    $console->graphProgressBarClose();
-                    $console->graphEmptyLine();
-                    $console->graphEmptyLine();
-                }
+				$directory = __instagram.'/'.$user_info['username'];
+				@mkdir($directory);
+				downloadStoriesByLink($console, $directory, $user_info['username'], $user_stories['data']['reels_media'][0]['items']);
+				$console->graphEmptyLine();
                 
+                $console->graphWriteToLine('Trying to find & download Pinned Stories by '.$user_info['username'].'...');
+                $console->graphEmptyLine();
+				$user_highlight = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=9ca88e465c3f866a76f7adee3871bdd8&variables={"user_id":"'.$user['id'].'","include_highlight_reels":true}', getInstagramHeaders());
+				if (is_array(@$user_highlight['data']['user']['edge_highlight_reels']['edges']) && count($user_highlight['data']['user']['edge_highlight_reels']['edges']) != 0) {
+					$stories_spack = array();
+					foreach ($user_highlight['data']['user']['edge_highlight_reels']['edges'] as $sdd => $stories_pack) {
+						$stories_pack = $stories_pack['node'];
+						if ($stories_pack['__typename'] == 'GraphHighlightReel' && $stories_pack['cover_media'] != null) {
+							$stories_spack[] = $stories_pack['id'];
+						}
+					}
+					
+					$packs_array = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=45246d3fe16ccc6577e0bd297a5db1ab&variables={"highlight_reel_ids":["'.implode($stories_spack, '","').'"],"precomposed_overlay":false}', getInstagramHeaders());
+					$items = array();
+					foreach ($packs_array['data']['reels_media'] as $st_block) {
+						foreach ($st_block['items'] as $story) {
+							$items[] = $story;
+						}
+					}
+					downloadStoriesByLink($console, $directory, $user_info['username'], $items);
+					
+				} else {
+					$console->graphWriteToLine('Pinned are empty!');
+				}
+				$console->graphEmptyLine();
+				$console->graphEmptyLine();
             }
         }
         $console->graphDottedLine();
@@ -237,6 +224,48 @@
     
     /*  Functions  ---  Start  */
     
+	function downloadStoriesByLink($console, $directory, $username, $link) {
+		global $config;
+		global $net;
+		
+		$console->graphProgressBarCreate();
+		$console->graphProgressBarUpdate(0, count($link));
+		foreach ($link as $id => $story) {
+			$time_public = $story['taken_at_timestamp'];
+			switch ($story['__typename']) {
+				case 'GraphStoryImage':
+				case 'GraphStoryVideo':
+					$images = $story[$story['__typename'] == 'GraphStoryVideo' ? 'video_resources' : 'display_resources'];
+					$images_count = count($images);
+					$image_maxres = $images[$images_count-1];
+					
+					$filename = $directory.'/'.$username.' at '.date('Y.m.d - H.i.s',$time_public).($story['__typename'] == 'GraphStoryVideo' ? '.mp4' : '.jpg');
+					
+					if (!file_exists($filename)) {
+						if (!@$config['incognito']) {
+							$timestamp = time();
+							$status = $net->PostQuery('https://www.instagram.com/stories/reel/seen', array(
+								'reelMediaId' => $story['id'], 
+								'reelMediaOwnerId' => $story['owner']['id'], 
+								'reelId' => $story['owner']['id'], 
+								'reelMediaTakenAt' => $timestamp, 
+								'viewSeenAt' => $timestamp
+							), getInstagramHeaders(array(
+								'Referer' => 'https://www.instagram.com/stories/'.$username.'/'
+							)));
+						}
+						
+						if (@$config['incognito'] ? true : @$status['status'] == 'ok') {
+							file_put_contents($filename, $net->Request(array(CURLOPT_URL =>$image_maxres['src']), getInstagramHeaders(), true));
+						}
+					}
+				break;
+			}
+			$console->graphProgressBarUpdate($id+1, count($link));
+		}
+		$console->graphProgressBarClose();
+	}
+	
 	function getInstagramHeaders($plus = array()) {
 		global $__csrftoken;
 		$elite = array(
