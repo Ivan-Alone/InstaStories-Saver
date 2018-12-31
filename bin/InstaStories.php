@@ -144,8 +144,12 @@
             $console->graphEmptyLine();
         }
         
-        $feed = $net->GetQuery('https://www.instagram.com/?__a=1', getInstagramHeaders());
-        $console->graphWriteToLine('Grabbing subscribes from '.$feed['graphql']['user']['username'].'\'s feed...');
+        $feed = $net->GetQuery('https://www.instagram.com/', getInstagramHeaders(), true);
+		
+		preg_match('#window\._sharedData \= (.+)\;</script>#U', $feed, $page_data);
+		$user_data = json_decode($page_data[1], true);
+		
+        $console->graphWriteToLine('Grabbing subscribes from '.$user_data['config']['viewer']['username'].'\'s feed...');
         $console->graphEmptyLine();
         
         $stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17890626976041463&variables={}', getInstagramHeaders());
