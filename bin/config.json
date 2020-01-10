@@ -1,1 +1,7 @@
-{"stories_folder":"Instagram", "temp_folder":"temp", "cookies_storage":"curl_cookies.lcf", "loading_sprite_1":"bin/instaload.png.conpic2", "loading_sprite_2":"bin/myLogo.png.conpic2"}
+{
+    "stories_folder":"Instagram", 
+    "temp_folder":"temp", 
+    "cookies_storage":"curl_cookies.lcf", 
+    "loading_sprite_1":"bin/instaload.png.conpic2", 
+    "loading_sprite_2":"bin/myLogo.png.conpic2"
+}

@@ -7,6 +7,17 @@
     
     /*  Algorhythm  ---  Start  */
     
+	function fillArrayByLines(&$array, $file) {
+		$data = file_get_contents($file);
+		foreach (explode("\n", $data) as $line) {
+			$line = trim($line);
+
+			if (strlen($line) > 0 && strlen($line) <= 30) {
+				array_push($array, $line);
+			}
+		}
+	}
+	
     echo 'Loading...' . PHP_EOL;
     
     $config = @json_decode(@file_get_contents('config.json'), true);
@@ -36,6 +47,22 @@
     $loading_sprite = @file_get_contents($save_path.$config['loading_sprite_1']);
     $developer_sprite = @file_get_contents($save_path.$config['loading_sprite_2']);
     
+	
+	$wl = "whitelist.txt";
+	$bl = "blacklist.txt";
+
+	$whitelist = [];
+	$blacklist = [];
+
+	if (file_exists($wl)) {
+		fillArrayByLines($whitelist, $wl);
+	} else {
+		if (file_exists($bl)) {
+			fillArrayByLines($blacklist, $bl);
+		}
+	}
+	
+	
     echo 'Loading done!' . PHP_EOL;
     
   //$console = new ConsoleGraph('__do_not_configure_window');
@@ -143,13 +170,12 @@
             $console->graphEmptyLine();
             $console->graphEmptyLine();
         }
-        
-        $feed = $net->GetQuery('https://www.instagram.com/', getInstagramHeaders(), true);
+       
+        $feed = $net->Request(array(CURLOPT_URL => 'https://www.instagram.com/graphql/query/?query_hash=01b3ccff4136c4adf5e67e1dd7eab68d&variables={}'), getInstagramHeaders(), true);
 		
-		preg_match('#window\._sharedData \= (.+)\;</script>#U', $feed, $page_data);
-		$user_data = json_decode($page_data[1], true);
+		$feed = @json_decode( $feed, true);
 		
-        $console->graphWriteToLine('Grabbing subscribes from '.$user_data['config']['viewer']['username'].'\'s feed...');
+        $console->graphWriteToLine('Grabbing subscribes from '.@$feed['data']['user']['username'].'\'s feed...');
         $console->graphEmptyLine();
         
         $stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17890626976041463&variables={}', getInstagramHeaders());
@@ -159,6 +185,8 @@
         $console->graphDottedLine();
         $console->graphEmptyLine();
 		
+		$flag1 = false;
+			
         if (!is_array($stories) || count($stories) < 1) {
             $console->graphWriteToLine('Nothing to download, no stories in your feed!');
             $console->graphEmptyLine();
@@ -168,45 +196,69 @@
                 $id         = $user['id'];
                 $user_info  = $user['user'];
                 
-                $console->graphWriteToLine('Reading & downloading Stories by '.$user_info['username'].'...');
-                $console->graphEmptyLine();
-                
-                $user_stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}', getInstagramHeaders());
-                @mkdir(__instagram);
-                
-				$directory = __instagram.'/'.$user_info['username'];
-				@mkdir($directory);
-				downloadStoriesByLink($console, $directory, $user_info['username'], $user_stories['data']['reels_media'][0]['items']);
-				$console->graphEmptyLine();
-                
-                $console->graphWriteToLine('Trying to find & download Pinned Stories by '.$user_info['username'].'...');
-                $console->graphEmptyLine();
-				$user_highlight = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=9ca88e465c3f866a76f7adee3871bdd8&variables={"user_id":"'.$user['id'].'","include_highlight_reels":true}', getInstagramHeaders());
-				if (is_array(@$user_highlight['data']['user']['edge_highlight_reels']['edges']) && count($user_highlight['data']['user']['edge_highlight_reels']['edges']) != 0) {
-					$stories_spack = array();
-					foreach ($user_highlight['data']['user']['edge_highlight_reels']['edges'] as $sdd => $stories_pack) {
-						$stories_pack = $stories_pack['node'];
-						if ($stories_pack['__typename'] == 'GraphHighlightReel' && $stories_pack['cover_media'] != null) {
-							$stories_spack[] = $stories_pack['id'];
-						}
+				$owner = $user_info['username'];
+				$flag = false;
+				
+				if (count($whitelist) > 0) {
+					if (!in_array($owner, $whitelist)) {
+						$flag = true;
 					}
-					
-					$packs_array = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=45246d3fe16ccc6577e0bd297a5db1ab&variables={"highlight_reel_ids":["'.implode($stories_spack, '","').'"],"precomposed_overlay":false}', getInstagramHeaders());
-					$items = array();
-					foreach ($packs_array['data']['reels_media'] as $st_block) {
-						foreach ($st_block['items'] as $story) {
-							$items[] = $story;
-						}
-					}
-					downloadStoriesByLink($console, $directory, $user_info['username'], $items);
-					
 				} else {
-					$console->graphWriteToLine('Pinned are empty!');
+					if (count($blacklist) > 0) {
+						if (in_array($owner, $blacklist)) {
+							$flag = true;
+						}
+					}
 				}
-				$console->graphEmptyLine();
-				$console->graphEmptyLine();
+				
+				if (!$flag) {
+					$flag1 = true;
+					$console->graphWriteToLine('Reading & downloading Stories by '.$user_info['username'].'...');
+					$console->graphEmptyLine();
+					
+					$user_stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}', getInstagramHeaders());
+					@mkdir(__instagram);
+					
+					$directory = __instagram.'/'.$user_info['username'];
+					@mkdir($directory);
+					downloadStoriesByLink($console, $directory, $user_info['username'], $user_stories['data']['reels_media'][0]['items']);
+					$console->graphEmptyLine();
+					
+					$console->graphWriteToLine('Trying to find & download Pinned Stories by '.$user_info['username'].'...');
+					$console->graphEmptyLine();
+					$user_highlight = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=9ca88e465c3f866a76f7adee3871bdd8&variables={"user_id":"'.$user['id'].'","include_highlight_reels":true}', getInstagramHeaders());
+					if (is_array(@$user_highlight['data']['user']['edge_highlight_reels']['edges']) && count($user_highlight['data']['user']['edge_highlight_reels']['edges']) != 0) {
+						$stories_spack = array();
+						foreach ($user_highlight['data']['user']['edge_highlight_reels']['edges'] as $sdd => $stories_pack) {
+							$stories_pack = $stories_pack['node'];
+							if ($stories_pack['__typename'] == 'GraphHighlightReel' && $stories_pack['cover_media'] != null) {
+								$stories_spack[] = $stories_pack['id'];
+							}
+						}
+						
+						$packs_array = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=45246d3fe16ccc6577e0bd297a5db1ab&variables={"highlight_reel_ids":["'.implode('","', $stories_spack).'"],"precomposed_overlay":false}', getInstagramHeaders());
+						$items = array();
+						foreach ($packs_array['data']['reels_media'] as $st_block) {
+							foreach ($st_block['items'] as $story) {
+								$items[] = $story;
+							}
+						}
+						downloadStoriesByLink($console, $directory, $user_info['username'], $items);
+						
+					} else {
+						$console->graphWriteToLine('Pinned are empty!');
+					}
+					$console->graphEmptyLine();
+					$console->graphEmptyLine();
+				}
             }
         }
+
+		if (!$flag1) {
+			$console->graphWriteToLine("Nothing to download, no stories in your feed!");
+			$console->graphEmptyLine();
+		}
+		
         $console->graphDottedLine();
         $console->graphEmptyLine();
         $console->graphWriteToLine('Downloading of Stories done!');
