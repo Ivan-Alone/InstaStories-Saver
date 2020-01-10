@@ -91,10 +91,6 @@
             $console->graphWriteToLine('Password: ');
             $pass = $console->graphReadPassword();
             $console->graphEmptyLine();
-            
-			echo  $login .PHP_EOL;
-			echo  $pass .PHP_EOL;
-			echo  $__csrftoken .PHP_EOL;
 			
             if ($login != null && $pass != null) {
                 $auth_json = PostQuery('https://www.instagram.com/accounts/login/ajax/', [
