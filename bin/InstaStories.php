@@ -18,6 +18,15 @@
 		}
 	}
 	
+	function PostQuery($url, $par_array = [], $header_plus = [], $noDecodeJSON = false) {
+		global $net;
+		return $net->Request([
+			CURLOPT_URL => $url,
+			CURLOPT_POST => 1,
+			CURLOPT_POSTFIELDS => http_build_query($par_array)
+		], $header_plus, $noDecodeJSON);
+	}
+	
     echo 'Loading...' . PHP_EOL;
     
     $config = @json_decode(@file_get_contents('config.json'), true);
@@ -38,7 +47,7 @@
 	
     $cookies = new CurlCookies(__cookie_path);
     if ($cookies->getValidValue('csrftoken') == null) {
-        $net->PostQuery('https://www.instagram.com', array(), getInstagramHeaders());
+        PostQuery('https://www.instagram.com', array(), getInstagramHeaders());
         $cookies->reload();
     }
     
@@ -102,7 +111,7 @@
             $console->graphEmptyLine();
             
             if ($login != null && $pass != null) {
-                $auth_json = $net->PostQuery('https://www.instagram.com/accounts/login/ajax/', array(
+                $auth_json = PostQuery('https://www.instagram.com/accounts/login/ajax/', array(
                     'username' => $login,
                     'password' => $pass
                 ), getInstagramHeaders());
@@ -119,7 +128,7 @@
                     break;
                 } elseif (@$auth_json['message'] == 'checkpoint_required') {
                     $checkpoint_url = $auth_json['checkpoint_url'];
-                    $checkout_data_dcd = $net->PostQuery('https://www.instagram.com'.$checkpoint_url, array(
+                    $checkout_data_dcd = PostQuery('https://www.instagram.com'.$checkpoint_url, array(
                         'choice' => 1
                     ), getInstagramHeaders());
                     
@@ -134,7 +143,7 @@
                         }
                         $console->graphWriteToLine('Enter your code: ');
                         
-                        $sequrity_data = $net->PostQuery('https://www.instagram.com'.$checkpoint_url, array(
+                        $sequrity_data = PostQuery('https://www.instagram.com'.$checkpoint_url, array(
                             'security_code' => $console->graphReadLn()
                         ), getInstagramHeaders());
                         
@@ -300,7 +309,7 @@
 					if (!file_exists($filename)) {
 						if (!@$config['incognito']) {
 							$timestamp = time();
-							$status = $net->PostQuery('https://www.instagram.com/stories/reel/seen', array(
+							$status = PostQuery('https://www.instagram.com/stories/reel/seen', array(
 								'reelMediaId' => $story['id'], 
 								'reelMediaOwnerId' => $story['owner']['id'], 
 								'reelId' => $story['owner']['id'], 
