@@ -73,6 +73,13 @@ The configuration is stored in the JSON format. The following directives are sup
 * **incognito** - enable *incognito* mode (the author can't check that you watched his stories) (default is **missing**, accepts *true*/*false*)
 
 
+## Чёрный и белый списки
+
+Now the program supports whitelist and blacklist. They are mutually exclusive, that is, you can use only one of the lists, or none. The white list has priority, that is, if there is a white list, the black list will not be taken into account. To create lists, create **whitelist.txt** or **blacklist.txt** in the **bin/** folder for the white and black lists, respectively. Record format: 1 nickname - one line.
+If there is at least one entry in the white list, the black list will be completely ignored. The program will download stories only when nicknames from the white list have them. Also, the program will completely ignore downloading stories from accounts in the black list (if the white list is empty).
+These lists are very useful when you need to download stories of only certain people, and in your subscriptions there are a lot of unnecessary to save accounts.
+
+
 #### Scripting and Task Scheduler
 
 This program can be used with your task scheduler. It is enough that the scheduler runs the start file in the folder with its.
