@@ -4,7 +4,7 @@
 		private $cookie_path;
 		private $proxy_data;
 		
-		private $latest_curl;
+		private $latest_curl, $latest_curl_info;
 		
 		private $defaultUserAgent;
 		
@@ -31,8 +31,6 @@
 		}
 		
 		public function Request($curl_opt_array, $header_plus = array(), $noDecodeJSON = false) {
-			if ($this->latest_curl != null) curl_close($this->latest_curl);
-			
 			$this->latest_curl = curl_init();
 			if ($this->proxy_data != null) {
 				curl_setopt($this->latest_curl, CURLOPT_PROXY, $this->proxy_data);
@@ -43,7 +41,7 @@
 			}
 		
 			$header = array(
-				'User-Agent' => $this->defaultUserAgent != null ? $this->defaultUserAgent : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0', 
+				'User-Agent' => $this->defaultUserAgent != null ? $this->defaultUserAgent : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0', 
 				'Accept' => '*/*', 
 				'Accept-Language' => 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3', 
 				'Connection' => 'keep-alive'
@@ -61,6 +59,10 @@
 			
 			$data = curl_exec($this->latest_curl);
 			
+			$this->latest_curl_info = curl_getinfo($this->latest_curl);
+			
+			curl_close($this->latest_curl);
+			
 			if ($noDecodeJSON) return $data;
 			
 			$json = json_decode($data, true);
@@ -74,8 +76,8 @@
 			$this->defaultUserAgent = $userAgent;
 		}
 		
-		public function getLatestCURLData() {
-			return $this->latest_curl;
+		public function getLatestInfo() {
+			return $this->latest_curl_info;
 		}
 		
 		private function compileHeader($header_array, $remove_array) {

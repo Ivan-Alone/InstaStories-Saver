@@ -6,26 +6,6 @@
     */
     
     /*  Algorhythm  ---  Start  */
-    
-	function fillArrayByLines(&$array, $file) {
-		$data = file_get_contents($file);
-		foreach (explode("\n", $data) as $line) {
-			$line = trim($line);
-
-			if (strlen($line) > 0 && strlen($line) <= 30) {
-				array_push($array, $line);
-			}
-		}
-	}
-	
-	function PostQuery($url, $par_array = [], $header_plus = [], $noDecodeJSON = false) {
-		global $net;
-		return $net->Request([
-			CURLOPT_URL => $url,
-			CURLOPT_POST => 1,
-			CURLOPT_POSTFIELDS => http_build_query($par_array)
-		], $header_plus, $noDecodeJSON);
-	}
 	
     echo 'Loading...' . PHP_EOL;
     
@@ -46,12 +26,14 @@
 	$net = new Network(__cookie_path/*/, '127.0.0.1:8888'/**/);
 	
     $cookies = new CurlCookies(__cookie_path);
-    if ($cookies->getValidValue('csrftoken') == null) {
-        PostQuery('https://www.instagram.com', array(), getInstagramHeaders());
+	
+	while ($cookies->getValidValue('csrftoken') == null) {
+        PostQuery('https://www.instagram.com', [], getInstagramHeaders());
         $cookies->reload();
-    }
+	}
+	
+	$__csrftoken = $cookies->getValidValue('csrftoken');
     
-    $__csrftoken = $cookies->getValidValue('csrftoken');
     
     $loading_sprite = @file_get_contents($save_path.$config['loading_sprite_1']);
     $developer_sprite = @file_get_contents($save_path.$config['loading_sprite_2']);
@@ -110,15 +92,20 @@
             $pass = $console->graphReadPassword();
             $console->graphEmptyLine();
             
+			echo  $login .PHP_EOL;
+			echo  $pass .PHP_EOL;
+			echo  $__csrftoken .PHP_EOL;
+			
             if ($login != null && $pass != null) {
-                $auth_json = PostQuery('https://www.instagram.com/accounts/login/ajax/', array(
+                $auth_json = PostQuery('https://www.instagram.com/accounts/login/ajax/', [
                     'username' => $login,
                     'password' => $pass
-                ), getInstagramHeaders());
+                ], getInstagramHeaders());
 				
                 $cookies->reload();
                 
                 if (@$auth_json['authenticated']) {
+                    $cookies->reload();
                     $user = $cookies->getValidValue('ds_user_id');
                     $console->graphWriteToLine('Logged in in '.date('H:i d.m.Y'));
                     
@@ -357,5 +344,25 @@
         }
         return $string;
     }
+    
+	function fillArrayByLines(&$array, $file) {
+		$data = file_get_contents($file);
+		foreach (explode("\n", $data) as $line) {
+			$line = trim($line);
+
+			if (strlen($line) > 0 && strlen($line) <= 30) {
+				array_push($array, $line);
+			}
+		}
+	}
+	
+	function PostQuery($url, $par_array = [], $header_plus = [], $noDecodeJSON = false) {
+		global $net;
+		return $net->Request([
+			CURLOPT_URL => $url,
+			CURLOPT_POST => 1,
+			CURLOPT_POSTFIELDS => http_build_query($par_array)
+		], $header_plus, $noDecodeJSON);
+	}
     
     /*  Functions  ---  End  */
