@@ -6,7 +6,7 @@
     */
     
     /*  Algorhythm  ---  Start  */
-	
+    
     echo 'Loading...' . PHP_EOL;
     
     $config = @json_decode(@file_get_contents('config.json'), true);
@@ -19,41 +19,41 @@
     define  ('__instagram', $save_path.$config['stories_folder']); 
     define  ('__temp', $save_path.$config['temp_folder']); 
     define  ('__cookie_path', __temp.'/'.$config['cookies_storage']);
-	
-	@mkdir(__temp);
-	
+    
+    @mkdir(__temp);
+    
     // Uncomment for activate Fiddler Proxy - useful for debugging
-	$net = new Network(__cookie_path/*/, '127.0.0.1:8888'/**/);
-	
+    $net = new Network(__cookie_path/*/, '127.0.0.1:8888'/**/);
+    
     $cookies = new CurlCookies(__cookie_path);
-	
-	while ($cookies->getValidValue('csrftoken') == null) {
+    
+    while ($cookies->getValidValue('csrftoken') == null) {
         PostQuery('https://www.instagram.com', [], getInstagramHeaders());
         $cookies->reload();
-	}
-	
-	$__csrftoken = $cookies->getValidValue('csrftoken');
+    }
+    
+    $__csrftoken = $cookies->getValidValue('csrftoken');
     
     
     $loading_sprite = @file_get_contents($save_path.$config['loading_sprite_1']);
     $developer_sprite = @file_get_contents($save_path.$config['loading_sprite_2']);
     
-	
-	$wl = "whitelist.txt";
-	$bl = "blacklist.txt";
+    
+    $wl = __instagram."/whitelist.txt";
+    $bl = __instagram."/blacklist.txt";
 
-	$whitelist = [];
-	$blacklist = [];
+    $whitelist = [];
+    $blacklist = [];
 
-	if (file_exists($wl)) {
-		fillArrayByLines($whitelist, $wl);
-	} else {
-		if (file_exists($bl)) {
-			fillArrayByLines($blacklist, $bl);
-		}
-	}
-	
-	
+    if (file_exists($wl)) {
+        fillArrayByLines($whitelist, $wl);
+    } else {
+        if (file_exists($bl)) {
+            fillArrayByLines($blacklist, $bl);
+        }
+    }
+    
+    
     echo 'Loading done!' . PHP_EOL;
     
   //$console = new ConsoleGraph('__do_not_configure_window');
@@ -91,13 +91,15 @@
             $console->graphWriteToLine('Password: ');
             $pass = $console->graphReadPassword();
             $console->graphEmptyLine();
-			
+            
             if ($login != null && $pass != null) {
                 $auth_json = PostQuery('https://www.instagram.com/accounts/login/ajax/', [
                     'username' => $login,
-                    'password' => $pass
+                    # 'password' => $pass
+                    # New password transfer method - fake enc_password without AES 256 GCM encryption
+                    'enc_password' => '#PWD_INSTAGRAM_BROWSER:0:'.time().':'.$pass
                 ], getInstagramHeaders());
-				
+                
                 $cookies->reload();
                 
                 if (@$auth_json['authenticated']) {
@@ -164,9 +166,9 @@
         }
        
         $feed = $net->Request(array(CURLOPT_URL => 'https://www.instagram.com/graphql/query/?query_hash=01b3ccff4136c4adf5e67e1dd7eab68d&variables={}'), getInstagramHeaders(), true);
-		
-		$feed = @json_decode( $feed, true);
-		
+        
+        $feed = @json_decode( $feed, true);
+        
         $console->graphWriteToLine('Grabbing subscribes from '.@$feed['data']['user']['username'].'\'s feed...');
         $console->graphEmptyLine();
         
@@ -176,9 +178,9 @@
         $console->graphEmptyLine();
         $console->graphDottedLine();
         $console->graphEmptyLine();
-		
-		$flag1 = false;
-			
+        
+        $flag1 = false;
+            
         if (!is_array($stories) || count($stories) < 1) {
             $console->graphWriteToLine('Nothing to download, no stories in your feed!');
             $console->graphEmptyLine();
@@ -188,69 +190,69 @@
                 $id         = $user['id'];
                 $user_info  = $user['user'];
                 
-				$owner = $user_info['username'];
-				$flag = false;
-				
-				if (count($whitelist) > 0) {
-					if (!in_array($owner, $whitelist)) {
-						$flag = true;
-					}
-				} else {
-					if (count($blacklist) > 0) {
-						if (in_array($owner, $blacklist)) {
-							$flag = true;
-						}
-					}
-				}
-				
-				if (!$flag) {
-					$flag1 = true;
-					$console->graphWriteToLine('Reading & downloading Stories by '.$user_info['username'].'...');
-					$console->graphEmptyLine();
-					
-					$user_stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}', getInstagramHeaders());
-					@mkdir(__instagram);
-					
-					$directory = __instagram.'/'.$user_info['username'];
-					@mkdir($directory);
-					downloadStoriesByLink($console, $directory, $user_info['username'], $user_stories['data']['reels_media'][0]['items']);
-					$console->graphEmptyLine();
-					
-					$console->graphWriteToLine('Trying to find & download Pinned Stories by '.$user_info['username'].'...');
-					$console->graphEmptyLine();
-					$user_highlight = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=9ca88e465c3f866a76f7adee3871bdd8&variables={"user_id":"'.$user['id'].'","include_highlight_reels":true}', getInstagramHeaders());
-					if (is_array(@$user_highlight['data']['user']['edge_highlight_reels']['edges']) && count($user_highlight['data']['user']['edge_highlight_reels']['edges']) != 0) {
-						$stories_spack = array();
-						foreach ($user_highlight['data']['user']['edge_highlight_reels']['edges'] as $sdd => $stories_pack) {
-							$stories_pack = $stories_pack['node'];
-							if ($stories_pack['__typename'] == 'GraphHighlightReel' && $stories_pack['cover_media'] != null) {
-								$stories_spack[] = $stories_pack['id'];
-							}
-						}
-						
-						$packs_array = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=45246d3fe16ccc6577e0bd297a5db1ab&variables={"highlight_reel_ids":["'.implode('","', $stories_spack).'"],"precomposed_overlay":false}', getInstagramHeaders());
-						$items = array();
-						foreach ($packs_array['data']['reels_media'] as $st_block) {
-							foreach ($st_block['items'] as $story) {
-								$items[] = $story;
-							}
-						}
-						downloadStoriesByLink($console, $directory, $user_info['username'], $items);
-						
-					} else {
-						$console->graphWriteToLine('Pinned are empty!');
-					}
-					$console->graphEmptyLine();
-					$console->graphEmptyLine();
-				}
+                $owner = $user_info['username'];
+                $flag = false;
+                
+                if (count($whitelist) > 0) {
+                    if (!in_array($owner, $whitelist)) {
+                        $flag = true;
+                    }
+                } else {
+                    if (count($blacklist) > 0) {
+                        if (in_array($owner, $blacklist)) {
+                            $flag = true;
+                        }
+                    }
+                }
+                
+                if (!$flag) {
+                    $flag1 = true;
+                    $console->graphWriteToLine('Reading & downloading Stories by '.$user_info['username'].'...');
+                    $console->graphEmptyLine();
+                    
+                    $user_stories = $net->GetQuery('https://www.instagram.com/graphql/query/?query_id=17873473675158481&variables={"reel_ids":["'.$id.'"],"precomposed_overlay":false}', getInstagramHeaders());
+                    @mkdir(__instagram);
+                    
+                    $directory = __instagram.'/'.$user_info['username'];
+                    @mkdir($directory);
+                    downloadStoriesByLink($console, $directory, $user_info['username'], $user_stories['data']['reels_media'][0]['items']);
+                    $console->graphEmptyLine();
+                    
+                    $console->graphWriteToLine('Trying to find & download Pinned Stories by '.$user_info['username'].'...');
+                    $console->graphEmptyLine();
+                    $user_highlight = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=9ca88e465c3f866a76f7adee3871bdd8&variables={"user_id":"'.$user['id'].'","include_highlight_reels":true}', getInstagramHeaders());
+                    if (is_array(@$user_highlight['data']['user']['edge_highlight_reels']['edges']) && count($user_highlight['data']['user']['edge_highlight_reels']['edges']) != 0) {
+                        $stories_spack = array();
+                        foreach ($user_highlight['data']['user']['edge_highlight_reels']['edges'] as $sdd => $stories_pack) {
+                            $stories_pack = $stories_pack['node'];
+                            if ($stories_pack['__typename'] == 'GraphHighlightReel' && $stories_pack['cover_media'] != null) {
+                                $stories_spack[] = $stories_pack['id'];
+                            }
+                        }
+                        
+                        $packs_array = $net->GetQuery('https://www.instagram.com/graphql/query/?query_hash=45246d3fe16ccc6577e0bd297a5db1ab&variables={"highlight_reel_ids":["'.implode('","', $stories_spack).'"],"precomposed_overlay":false}', getInstagramHeaders());
+                        $items = array();
+                        foreach ($packs_array['data']['reels_media'] as $st_block) {
+                            foreach ($st_block['items'] as $story) {
+                                $items[] = $story;
+                            }
+                        }
+                        downloadStoriesByLink($console, $directory, $user_info['username'], $items);
+                        
+                    } else {
+                        $console->graphWriteToLine('Pinned are empty!');
+                    }
+                    $console->graphEmptyLine();
+                    $console->graphEmptyLine();
+                }
             }
         }
 
-		if (!$flag1) {
-			$console->graphWriteToLine("Nothing to download, no stories in your feed!");
-			$console->graphEmptyLine();
-		}
-		
+        if (!$flag1) {
+            $console->graphWriteToLine("Nothing to download, no stories in your feed!");
+            $console->graphEmptyLine();
+        }
+        
         $console->graphDottedLine();
         $console->graphEmptyLine();
         $console->graphWriteToLine('Downloading of Stories done!');
@@ -272,63 +274,63 @@
     
     /*  Functions  ---  Start  */
     
-	function downloadStoriesByLink($console, $directory, $username, $link) {
-		global $config;
-		global $net;
-		
-		$console->graphProgressBarCreate();
-		$console->graphProgressBarUpdate(0, count($link));
-		foreach ($link as $id => $story) {
-			$time_public = $story['taken_at_timestamp'];
-			switch ($story['__typename']) {
-				case 'GraphStoryImage':
-				case 'GraphStoryVideo':
-					$images = $story[$story['__typename'] == 'GraphStoryVideo' ? 'video_resources' : 'display_resources'];
-					$images_count = count($images);
-					$image_maxres = $images[$images_count-1];
-					
-					$filename = $directory.'/'.$username.' at '.date('Y.m.d - H.i.s',$time_public).($story['__typename'] == 'GraphStoryVideo' ? '.mp4' : '.jpg');
-					
-					if (!file_exists($filename)) {
-						if (!@$config['incognito']) {
-							$timestamp = time();
-							$status = PostQuery('https://www.instagram.com/stories/reel/seen', array(
-								'reelMediaId' => $story['id'], 
-								'reelMediaOwnerId' => $story['owner']['id'], 
-								'reelId' => $story['owner']['id'], 
-								'reelMediaTakenAt' => $timestamp, 
-								'viewSeenAt' => $timestamp
-							), getInstagramHeaders(array(
-								'Referer' => 'https://www.instagram.com/stories/'.$username.'/'
-							)));
-						}
-						
-						if (@$config['incognito'] ? true : @$status['status'] == 'ok') {
-							file_put_contents($filename, $net->Request(array(CURLOPT_URL =>$image_maxres['src']), getInstagramHeaders(), true));
-						}
-					}
-				break;
-			}
-			$console->graphProgressBarUpdate($id+1, count($link));
-		}
-		$console->graphProgressBarClose();
-	}
-	
-	function getInstagramHeaders($plus = array()) {
-		global $__csrftoken;
-		$elite = array(
-			'Referer' => 'https://www.instagram.com/', 
-			'X-CSRFToken' => @$__csrftoken, 
-			'X-Instagram-AJAX' => '1', 
-			'Content-Type' => 'application/x-www-form-urlencoded', 
-			'X-Requested-With' => 'XMLHttpRequest'
-		);
-		foreach ($plus as $name => $value) {
-			$elite[$name] = $value;
-		}
-		return $elite;
-	}
-	
+    function downloadStoriesByLink($console, $directory, $username, $link) {
+        global $config;
+        global $net;
+        
+        $console->graphProgressBarCreate();
+        $console->graphProgressBarUpdate(0, count($link));
+        foreach ($link as $id => $story) {
+            $time_public = $story['taken_at_timestamp'];
+            switch ($story['__typename']) {
+                case 'GraphStoryImage':
+                case 'GraphStoryVideo':
+                    $images = $story[$story['__typename'] == 'GraphStoryVideo' ? 'video_resources' : 'display_resources'];
+                    $images_count = count($images);
+                    $image_maxres = $images[$images_count-1];
+                    
+                    $filename = $directory.'/'.$username.' at '.date('Y.m.d - H.i.s',$time_public).($story['__typename'] == 'GraphStoryVideo' ? '.mp4' : '.jpg');
+                    
+                    if (!file_exists($filename)) {
+                        if (!@$config['incognito']) {
+                            $timestamp = time();
+                            $status = PostQuery('https://www.instagram.com/stories/reel/seen', array(
+                                'reelMediaId' => $story['id'], 
+                                'reelMediaOwnerId' => $story['owner']['id'], 
+                                'reelId' => $story['owner']['id'], 
+                                'reelMediaTakenAt' => $timestamp, 
+                                'viewSeenAt' => $timestamp
+                            ), getInstagramHeaders(array(
+                                'Referer' => 'https://www.instagram.com/stories/'.$username.'/'
+                            )));
+                        }
+                        
+                        if (@$config['incognito'] ? true : @$status['status'] == 'ok') {
+                            file_put_contents($filename, $net->Request(array(CURLOPT_URL =>$image_maxres['src']), getInstagramHeaders(), true));
+                        }
+                    }
+                break;
+            }
+            $console->graphProgressBarUpdate($id+1, count($link));
+        }
+        $console->graphProgressBarClose();
+    }
+    
+    function getInstagramHeaders($plus = array()) {
+        global $__csrftoken;
+        $elite = array(
+            'Referer' => 'https://www.instagram.com/', 
+            'X-CSRFToken' => @$__csrftoken, 
+            'X-Instagram-AJAX' => '1', 
+            'Content-Type' => 'application/x-www-form-urlencoded', 
+            'X-Requested-With' => 'XMLHttpRequest'
+        );
+        foreach ($plus as $name => $value) {
+            $elite[$name] = $value;
+        }
+        return $elite;
+    }
+    
     function replaceCycle($string, $replace, $cycle_lenght) {
         if ($cycle_lenght < 2) return $string;
         $find = '';
@@ -341,24 +343,24 @@
         return $string;
     }
     
-	function fillArrayByLines(&$array, $file) {
-		$data = file_get_contents($file);
-		foreach (explode("\n", $data) as $line) {
-			$line = trim($line);
+    function fillArrayByLines(&$array, $file) {
+        $data = file_get_contents($file);
+        foreach (explode("\n", $data) as $line) {
+            $line = trim($line);
 
-			if (strlen($line) > 0 && strlen($line) <= 30) {
-				array_push($array, $line);
-			}
-		}
-	}
-	
-	function PostQuery($url, $par_array = [], $header_plus = [], $noDecodeJSON = false) {
-		global $net;
-		return $net->Request([
-			CURLOPT_URL => $url,
-			CURLOPT_POST => 1,
-			CURLOPT_POSTFIELDS => http_build_query($par_array)
-		], $header_plus, $noDecodeJSON);
-	}
+            if (strlen($line) > 0 && strlen($line) <= 30) {
+                array_push($array, $line);
+            }
+        }
+    }
+    
+    function PostQuery($url, $par_array = [], $header_plus = [], $noDecodeJSON = false) {
+        global $net;
+        return $net->Request([
+            CURLOPT_URL => $url,
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => http_build_query($par_array)
+        ], $header_plus, $noDecodeJSON);
+    }
     
     /*  Functions  ---  End  */
